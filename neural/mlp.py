@@ -534,34 +534,34 @@ class MultilayerPerceptronNN:
         Perform backward propagation.
         :param y: True output labels.
         '''
-        m = y.shape[1] # Number of examples
+        samples = y.shape[0]
         self._deltas = []
 
         # Compute error at output layer
-        self._deltas.append(self._output_layer.backward(self._cycle, m, y, self._learning_rate))
+        self._deltas.append(self._output_layer.backward(self._cycle, samples, y, self._learning_rate))
 
         # Backpropagate
         for l in range(1, len(self._hidden_layer)):
             w = self._hidden_layer[-l + 1].weights if l > 1 else self._output_layer.weights
             self._deltas.append(self._hidden_layer[-l].backward(
-                self._cycle, m, w, self._deltas[-1], self._learning_rate))
+                self._cycle, samples, w, self._deltas[-1], self._learning_rate))
 
     def _backward_gpu(self, y: cp.ndarray):
         '''
         Perform backward propagation on the GPU.
         :param y: True output labels.
         '''
-        m = y.shape[1] # Number of examples
+        samples = y.shape[0]
         self._deltas = []
 
         # Compute error at output layer
-        self._deltas.append(self._output_layer.backward_gpu(self._cycle, m, y, self._learning_rate))
+        self._deltas.append(self._output_layer.backward_gpu(self._cycle, samples, y, self._learning_rate))
 
         # Backpropagate
         for l in range(1, len(self._hidden_layer)):
             w = self._hidden_layer[-l + 1].weights if l > 1 else self._output_layer.weights
             self._deltas.append(self._hidden_layer[-l].backward(
-                self._cycle, m, w, self._deltas[-1], self._learning_rate))
+                self._cycle, samples, w, self._deltas[-1], self._learning_rate))
 
     def train(self,
               x: np.ndarray | cp.ndarray,
