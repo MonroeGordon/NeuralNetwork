@@ -6,6 +6,7 @@ Module containing machine learning and AI algorithms that are separate from mode
 
 Details:
 - K-nearest neighbors
+- Linear Discriminant Analysis
 
 ### Linalg Module
 Module containing linear algebra functions used to process matrices, systems of equations, and other AI relevant mathematics.
