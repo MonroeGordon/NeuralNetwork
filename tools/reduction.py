@@ -1,9 +1,44 @@
+from algorithms.pca import PCA
 from algorithms.lda import LDA
-from linalg.decomposition import svd
+from linalg.decomposition import eigdecomp
+from linalg.decomposition import svd_decomp
 from linalg.eigen import eigen
 
 import cupy as cp
 import numpy as np
+
+def pca_dim_reduction(x: np.ndarray | cp.ndarray,
+                      n_components: int,
+                      device: str="cpu") -> np.ndarray | cp.ndarray:
+    '''
+    Reduce the dimensions of the dataset using principal component analysis (PCA).
+    :param x: Input data matrix (number samples, number features).
+    :param n_components: Number of principal components to keep.
+    :param device: CPU or GPU device.
+    :return: Transformed data.
+    '''
+    if x.ndim != 2:
+        raise ValueError("@ pca_dim_reduction: parameter 'x' must be a matrix (2-dimensional ndarray).")
+
+    c_mtx = PCA.covariance_matrix(x, device)
+    e_vals, e_vecs = eigdecomp(c_mtx, device)
+
+    w = e_vecs[:, :n_components]
+
+    if device == "cpu":
+        nx = x
+
+        if isinstance(nx, cp.ndarray):
+            nx = cp.asnumpy(nx)
+
+        return np.dot(nx - np.mean(nx, axis=0), w)
+    else:
+        cx = x
+
+        if isinstance(cx, np.ndarray):
+            cx = cp.asarray(cx)
+
+        return cp.dot(cx - cp.mean(cx, axis=0), w)
 
 def lda_projection(x: np.ndarray | cp.ndarray,
                    y: list,
@@ -51,7 +86,7 @@ def svd_dim_reduction(matrix: np.ndarray | cp.ndarray,
     :param device: CPU or GPU device.
     :return: Reduced matrix.
     '''
-    u, s, vt = svd(matrix, device)
+    u, s, vt = svd_decomp(matrix, device)
 
     if device == "cpu":
         uk = u[:, :k]

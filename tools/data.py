@@ -36,6 +36,39 @@ def class_values(y: np.ndarray | cp.ndarray) -> np.ndarray:
 
     return np.unique(ny)
 
+def pca_data_reconstruct(x_reduced: np.ndarray | cp.ndarray,
+                         eigenvectors: np.ndarray | cp.ndarray,
+                         device: str="cpu") -> np.ndarray | cp.ndarray:
+    '''
+    Reconstruct the data from dimensions reduced by principal component analysis (PCA).
+    :param x_reduced: Data with dimension reduced by PCA.
+    :param eigenvectors: Eigenvectors corresponding to the components used.
+    :param device: CPU or GPU device.
+    :return: Reconstructed data.
+    '''
+    if device == "cpu":
+        nx = x_reduced
+        ne = eigenvectors
+
+        if isinstance(nx, cp.ndarray):
+            nx = cp.asnumpy(nx)
+
+        if isinstance(ne, cp.ndarray):
+            ne = cp.asnumpy(ne)
+
+        return np.dot(nx, ne.T) + np.mean(nx, axis=0)
+    else:
+        cx = x_reduced
+        ce = eigenvectors
+
+        if isinstance(cx, np.ndarray):
+            cx = cp.asarray(cx)
+
+        if isinstance(ce, np.ndarray):
+            ce = cp.asarray(ce)
+
+        return cp.dot(cx, ce.T) + cp.mean(cx, axis=0)
+
 def train_test_split(x: np.ndarray | cp.ndarray,
                      y: np.ndarray | cp.ndarray,
                      test_size: float | int=0.25,
