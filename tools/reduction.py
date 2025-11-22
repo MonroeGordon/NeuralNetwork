@@ -12,7 +12,7 @@ def pca_dim_reduction(x: np.ndarray | cp.ndarray,
                       device: str="cpu") -> np.ndarray | cp.ndarray:
     '''
     Reduce the dimensions of the dataset using principal component analysis (PCA).
-    :param x: Input data matrix (number samples, number features).
+    :param x: Input feature matrix (number samples, number features).
     :param n_components: Number of principal components to keep.
     :param device: CPU or GPU device.
     :return: Transformed data.
