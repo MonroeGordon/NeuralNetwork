@@ -16,7 +16,10 @@ Contains a class for performing linear discriminant analysis on an input feature
 Details:
 - **LDA**: Class containing functions for finding the mean vectors for each class, and for computing between-class and within-class scatter matrices.
   - _Between Class Scatter_: Computes the between-class scatter matrix of the input feature matrix and class labels, using the computed mean vectors for each class.
+  - _Fit_: Fits the LDA model to the input feature matrix and class labels.
   - _Means_: Computes the mean vectors for each class.
+  - _Predict_: Predicts class labels from transformed features using nearest mean classification.
+  - _Transform_: Applies LDA transformation to the input feature matrix.
   - _Within Class Scatter_: Computes the within-class scatter matrix of the input feature matrix and class labels, using the computed mean vectors for each class.
 
 ### Principal Component Analysis (pca.py)
