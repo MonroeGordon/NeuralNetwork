@@ -39,7 +39,7 @@ Details:
 - Dimensionality reduction
 
 ### Datasets Folder
-Folder containing all available datasets that can be loaded by this library,
+Folder containing all available datasets that can be loaded and used by this library,
 
 Details:
 - Iris Flower Dataset (iris.csv)
