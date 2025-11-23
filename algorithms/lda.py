@@ -11,7 +11,7 @@ class LDA:
 
     @staticmethod
     def between_class_scatter(x: np.ndarray | cp.ndarray,
-                              y: list,
+                              y: np.ndarray | cp.ndarray,
                               means: dict,
                               device: str = "cpu") -> np.ndarray | cp.ndarray:
         '''
@@ -25,34 +25,45 @@ class LDA:
         if x.ndim != 2:
             raise ValueError("LDA @ between_class_scatter: parameter 'x' must be a matrix (2-dimensional ndarray).")
 
-        if len(y) != x.shape[0]:
-            raise ValueError("LDA @ between_class_scatter: length of parameter 'y' must match parameter 'x' shape[0].")
+        if y.ndim != 1:
+            raise ValueError("@ lda_projection: parameter 'y' must be a vector (1-dimensional ndarray).")
+
+        if y.shape[0] != x.shape[0]:
+            raise ValueError("@ lda_projection: parameter 'y' shape[0] must equal parameter 'x' shape[0].")
 
         if device == "cpu":
             nx = x
+            ny = y
 
             if isinstance(nx, cp.ndarray):
                 nx = cp.asnumpy(nx)
+
+            if isinstance(ny, cp.ndarray):
+                ny = cp.asnumpy(ny)
 
             overall_mean = np.mean(nx, axis=0)
             sb = np.zeros((nx.shape[1], nx.shape[1]))
 
             for c, mean in means.items():
-                nc = np.sum(y == c)
+                nc = np.sum(ny == c)
                 mean = mean.reshape(-1, 1)
                 overall_mean = overall_mean.reshape(-1, 1)
                 sb += nc * (mean - overall_mean).dot((mean - overall_mean).T)
         else:
             cx = x
+            cy = y
 
             if isinstance(cx, np.ndarray):
                 cx = cp.asarray(cx)
+
+            if isinstance(cy, np.ndarray):
+                cy = cp.asarray(cy)
 
             overall_mean = cp.mean(cx, axis=0)
             sb = cp.zeros((cx.shape[1], cx.shape[1]))
 
             for c, mean in means.items():
-                nc = cp.sum(y == c)
+                nc = cp.sum(cy == c)
                 mean = mean.reshape(-1, 1)
                 overall_mean = overall_mean.reshape(-1, 1)
                 sb += nc * (mean - overall_mean).dot((mean - overall_mean).T)
@@ -61,7 +72,7 @@ class LDA:
 
     @staticmethod
     def fit(x: np.ndarray | cp.ndarray,
-            y: list,
+            y: np.ndarray | cp.ndarray,
             device: str="cpu") -> tuple:
         '''
         Fit the LDA model by computing the within-class and between-class scatter matrices.
@@ -73,8 +84,11 @@ class LDA:
         if x.ndim != 2:
             raise ValueError("LDA @ fit: parameter 'x' must be a matrix (2-dimensional ndarray).")
 
-        if len(y) != x.shape[0]:
-            raise ValueError("LDA @ fit: length of parameter 'y' must match parameter 'x' shape[0].")
+        if y.ndim != 1:
+            raise ValueError("@ lda_projection: parameter 'y' must be a vector (1-dimensional ndarray).")
+
+        if y.shape[0] != x.shape[0]:
+            raise ValueError("@ lda_projection: parameter 'y' shape[0] must equal parameter 'x' shape[0].")
 
         means = LDA.means(x, y, device)
         sw = LDA.within_class_scatter(x, y, means, device)
@@ -84,13 +98,13 @@ class LDA:
 
         sorted_indices = np.argsort(e_vals)[::-1] if device == "cpu" else cp.argsort(e_vals)[::-1]
 
-        w = e_vals[:, sorted_indices[:len(means.keys()) - 1]]
+        w = e_vecs[:, sorted_indices[:len(means.keys()) - 1]]
 
         return w, means
 
     @staticmethod
     def means(x: np.ndarray | cp.ndarray,
-              y: list,
+              y: np.ndarray | cp.ndarray,
               device: str="cpu") -> dict:
         '''
         Compute the mean vectors for each class.
@@ -102,33 +116,44 @@ class LDA:
         if x.ndim != 2:
             raise ValueError("LDA @ means: parameter 'x' must be a matrix (2-dimensional ndarray).")
 
-        if len(y) != x.shape[0]:
-            raise ValueError("LDA @ means: length of parameter 'y' must match parameter 'x' shape[0].")
+        if y.ndim != 1:
+            raise ValueError("@ lda_projection: parameter 'y' must be a vector (1-dimensional ndarray).")
+
+        if y.shape[0] != x.shape[0]:
+            raise ValueError("@ lda_projection: parameter 'y' shape[0] must equal parameter 'x' shape[0].")
 
         if device == "cpu":
             nx = x
+            ny = y
 
             if isinstance(nx, cp.ndarray):
                 nx = cp.asnumpy(nx)
 
-            classes = np.unique(y)
+            if isinstance(ny, cp.ndarray):
+                ny = cp.asnumpy(ny)
+
+            classes = np.unique(ny)
             means = {}
 
             for c in classes:
-                means[c] = np.mean(nx[y == c], axis=0)
+                means[c] = np.mean(nx[ny == c], axis=0)
 
             return means
         else:
             cx = x
+            cy = y
 
-            if isinstance(cx, cp.ndarray):
-                cx = cp.asnumpy(cx)
+            if isinstance(cx, np.ndarray):
+                cx = cp.asarray(cx)
 
-            classes = cp.unique(y)
+            if isinstance(cy, np.ndarray):
+                cy = cp.asarray(cy)
+
+            classes = cp.unique(cy)
             means = {}
 
             for c in classes:
-                means[c] = cp.mean(cx[y == c], axis=0)
+                means[float(c)] = cp.mean(cx[cy == c], axis=0)
 
             return means
 
@@ -202,7 +227,7 @@ class LDA:
 
     @staticmethod
     def within_class_scatter(x: np.ndarray | cp.ndarray,
-                             y: list,
+                             y: np.ndarray | cp.ndarray,
                              means: dict,
                              device: str="cpu") -> np.ndarray | cp.ndarray:
         '''
@@ -216,21 +241,28 @@ class LDA:
         if x.ndim != 2:
             raise ValueError("LDA @ within_class_scatter: parameter 'x' must be a matrix (2-dimensional ndarray).")
 
-        if len(y) != x.shape[0]:
-            raise ValueError("LDA @ within_class_scatter: length of parameter 'y' must match parameter 'x' shape[0].")
+        if y.ndim != 1:
+            raise ValueError("@ lda_projection: parameter 'y' must be a vector (1-dimensional ndarray).")
+
+        if y.shape[0] != x.shape[0]:
+            raise ValueError("@ lda_projection: parameter 'y' shape[0] must equal parameter 'x' shape[0].")
 
         if device == "cpu":
             nx = x
+            ny = y
 
             if isinstance(nx, cp.ndarray):
                 nx = cp.asnumpy(nx)
+
+            if isinstance(ny, cp.ndarray):
+                ny = cp.asnumpy(ny)
 
             sw = np.zeros((nx.shape[1], nx.shape[1]))
 
             for c, mean in means.items():
                 class_scatter = np.zeros((nx.shape[1], nx.shape[1]))
 
-                for sample in nx[y == c]:
+                for sample in nx[ny == c]:
                     sample = sample.reshape(-1, 1)
                     mean = mean.reshape(-1, 1)
                     class_scatter += (sample - mean).dot((sample - mean).T)
@@ -238,16 +270,20 @@ class LDA:
                 sw += class_scatter
         else:
             cx = x
+            cy = y
 
             if isinstance(cx, np.ndarray):
                 cx = cp.asarray(cx)
+
+            if isinstance(cy, np.ndarray):
+                cy = cp.asarray(cy)
 
             sw = cp.zeros((cx.shape[1], cx.shape[1]))
 
             for c, mean in means.items():
                 class_scatter = cp.zeros((cx.shape[1], cx.shape[1]))
 
-                for sample in cx[y == c]:
+                for sample in cx[cy == c]:
                     sample = sample.reshape(-1, 1)
                     mean = mean.reshape(-1, 1)
                     class_scatter += (sample - mean).dot((sample - mean).T)

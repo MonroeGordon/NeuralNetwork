@@ -12,7 +12,7 @@ class PCA:
                           device: str="cpu") -> np.ndarray | cp.ndarray:
         '''
         Calculate the covariance matrix of a dataset.
-        :param x: Input data matrix (number samples, number features).
+        :param x: Input feature matrix (number samples, number features).
         :param device: CPU or GPU device.
         :return: Covariance matrix.
         '''
