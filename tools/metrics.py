@@ -29,9 +29,9 @@ def accuracy(y: np.ndarray | cp.ndarray,
         cyp = yp
 
         if isinstance(cy, np.ndarray):
-            cy = cp.asarray(cy)
+            cy = cp.asarray(cy.astype(np.float32))
 
         if isinstance(cyp, np.ndarray):
-            cyp = cp.asarray(cyp)
+            cyp = cp.asarray(cyp.astype(np.float32))
 
-        return float(cp.mean(cp.abs(cy - cyp))[0])
+        return float(cp.mean(cp.abs(cy - cyp)))
