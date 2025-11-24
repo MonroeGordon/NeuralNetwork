@@ -108,22 +108,22 @@ class Datasets:
         return Data(x_names, y_names, x, y)
 
     @staticmethod
-    def synth_regression(n_samples: int=100,
-                         n_features: int=1,
-                         n_informative: int=1,
-                         n_targets: int=1,
-                         bias: float=0.0,
-                         noise: float=1.0,
-                         random_state: int=None,
-                         distribution: str="uniform",
-                         coefficients: bool=False) -> Data | tuple:
+    def create_regression(n_samples: int=100,
+                          n_features: int=1,
+                          n_informative: int=1,
+                          n_targets: int=1,
+                          bias: list=None,
+                          noise: float=1.0,
+                          random_state: int=None,
+                          distribution: str="uniform",
+                          coefficients: bool=False) -> Data | tuple:
         '''
         Creates a synthetic regression dataset.
         :param n_samples: Number of data samples to generate.
         :param n_features: Number of features to generate.
         :param n_informative: Number of features contributing to the target variable(s).
         :param n_targets: Number of target variables.
-        :param bias: The intercept term in the linear model.
+        :param bias: The intercept term(s) in the linear model.
         :param noise: Standard deviation of the noise generated for the data.
         :param random_state: Random seed for reproducibility.
         :param distribution: Uniform or normal distribution for random feature values.
@@ -131,26 +131,33 @@ class Datasets:
         :return: A Data class containing the synthetic regression dataset.
         '''
         if n_samples < 1:
-            raise ValueError("Datasets @ synth_regression: parameter 'n_samples' needs to exceed 0.")
+            raise ValueError("Datasets @ create_regression: parameter 'n_samples' needs to exceed 0.")
 
         if n_features < 1:
-            raise ValueError("Datasets @ synth_regression: parameter 'n_features' needs to exceed 0.")
+            raise ValueError("Datasets @ create_regression: parameter 'n_features' needs to exceed 0.")
 
         if n_informative < 1:
-            raise ValueError("Datasets @ synth_regression: parameter 'n_informative' needs to exceed 0.")
+            raise ValueError("Datasets @ create_regression: parameter 'n_informative' needs to exceed 0.")
 
         if n_targets < 1:
-            raise ValueError("Datasets @ synth_regression: parameter 'n_targets' needs to exceed 0.")
+            raise ValueError("Datasets @ create_regression: parameter 'n_targets' needs to exceed 0.")
+
+        if bias is not None and len(bias) != n_targets:
+            raise ValueError("Datasets @ create_regression: parameter 'bias' must be None or have a length equal to "
+                             "parameter 'n_targets'.")
 
         if not noise > 0.0:
-            raise ValueError("Datasets @ synth_regression: parameter 'noise' needs to exceed 0.0.")
+            raise ValueError("Datasets @ create_regression: parameter 'noise' needs to exceed 0.0.")
 
         if distribution != "uniform" and distribution != "normal":
-            raise ValueError("Datasets @ synth_regression: parameter 'distribution' needs to be 'uniform' or 'normal'.")
+            raise ValueError("Datasets @ create_regression: parameter 'distribution' needs to be 'uniform' or "
+                             "'normal'.")
 
         if n_informative > n_features:
-            raise ValueError("Datasets @ synth_regression: parameter 'n_informative' cannot exceed parameter "
+            raise ValueError("Datasets @ create_regression: parameter 'n_informative' cannot exceed parameter "
                              "'n_features'.")
+
+        np.random.seed(random_state)
 
         if distribution == "uniform":
             x = np.random.uniform(low=-10.0, high=10.0, size=(n_samples, n_features))
@@ -162,7 +169,10 @@ class Datasets:
 
         n = np.random.normal(loc=0.0, scale=noise, size=(n_targets, n_samples))
 
-        y = np.array([(x[:, xi[i]] @ c[:, i] + n[i, :]) for i in range(n_targets)]).reshape((n_samples, n_targets))
+        b = np.zeros(n_targets) if bias is None else np.array(bias)
+
+        y = np.array([(x[:, xi[i]] @ c[:, i] + b[i] + n[i, :])
+                      for i in range(n_targets)]).reshape((n_samples, n_targets))
 
         x_names = []
         y_names = []
@@ -176,4 +186,7 @@ class Datasets:
         x_names = np.array(x_names)
         y_names = np.array(y_names)
 
-        return Data(x_names, y_names, x, y)
+        if coefficients:
+            return Data(x_names, y_names, x, y), c
+        else:
+            return Data(x_names, y_names, x, y)
