@@ -27,7 +27,7 @@ Details:
   - _Targets_: Returns the target value matrix, which may contain class name index values or be a one hot encoding of the classes, depending on how the dataset was loaded.
 - **Datasets**: Class providing access to a library of datasets and the ability to load them into a Data class for accessing and using the data.
   - _Load Iris_: Loads the Iris Flower dataset into a data class.
-  - _Synthetic Regression_: Creates a synthetic linear regression dataset.
+  - _Create Regression_: Creates a synthetic linear regression dataset.
 
 ### Metrics (metrics.py)
 Provides tools for measuring various metrics in machine learning and AI models.
