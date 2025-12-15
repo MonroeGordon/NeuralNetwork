@@ -35,6 +35,7 @@ class LogisticRegression:
         self._loss = 0.0
         self._update = None
         self._tolerance = tolerance
+        self._device = device
 
     def _forward(self, x: np.ndarray) -> np.ndarray:
         '''
@@ -65,10 +66,10 @@ class LogisticRegression:
         :param learning_rate: Learning rate.
         :return: This layer's error value.
         '''
-        loss = (Loss.bin_cross_entropy(y, self._a) +
-                self._regularizer_functions[self._regularizer_function]["cpu"](self._weights))
+        self._loss = (Loss.bin_cross_entropy(y, self._a) +
+                      self._regularizer_functions[self._regularizer_function]["cpu"](self._weights))
         self._d = Activation.sigmoid_der(self._z, self._a)
-        delta = loss * self._d
+        delta = self._loss * self._d
 
         self._update, self._weights = Optimizer.adam(
             cycle, samples, self._update, learning_rate, delta, self._weights, self._a, self._d)
@@ -85,10 +86,10 @@ class LogisticRegression:
         :param learning_rate: Learning rate.
         :return: This layer's error value.
         '''
-        loss = (Loss.bin_cross_entropy_gpu(y, self._a) +
-                self._regularizer_functions[self._regularizer_function]["gpu"](self._weights))
+        self._loss = (Loss.bin_cross_entropy_gpu(y, self._a) +
+                      self._regularizer_functions[self._regularizer_function]["gpu"](self._weights))
         self._d = Activation.sigmoid_der_gpu(self._z, self._a)
-        delta = loss * self._d
+        delta = self._loss * self._d
 
         self._update, self._weights = Optimizer.adam_gpu(
             cycle, samples, self._update, learning_rate, delta, self._weights, self._a, self._d)
@@ -96,16 +97,13 @@ class LogisticRegression:
 
         return delta
 
-    def predict(self,
-                x: np.ndarray | cp.ndarray,
-                device: str="cpu") -> np.ndarray | cp.ndarray:
+    def predict(self, x: np.ndarray | cp.ndarray) -> np.ndarray | cp.ndarray:
         '''
         Makes predictions using a trained logistic regression neural network model.
         :param x: Input matrix (2-dimensional ndarray).
-        :param device: CPU or GPU device/
         :return: Predicted probabilities.
         '''
-        if device == "cpu":
+        if self._device == "cpu":
             nx = x
 
             if isinstance(nx, cp.ndarray):
@@ -122,13 +120,11 @@ class LogisticRegression:
 
     def train(self,
               x: np.ndarray | cp.ndarray,
-              y: float | np.ndarray | cp.ndarray,
-              device: str="cpu") -> list[float]:
+              y: float | np.ndarray | cp.ndarray) -> list:
         '''
         Train the logistic regression neural network model.
         :param x: Input matrix (2-dimensional ndarray).
         :param y: True value(s).
-        :param device: CPU or GPU device.
         :return: Log likelihood value(s).
         '''
         if x.ndim != 2:
@@ -138,7 +134,7 @@ class LogisticRegression:
             raise ValueError("LogisticRegression @ train: parameter 'y' must be a matrix (2-dimensional ndarray).")
 
         if x.shape[0] != y.shape[0]:
-            raise ValueError("Logistic Regression @ train: parameter 'x' and 'y' must have the same row count "
+            raise ValueError("LogisticRegression @ train: parameter 'x' and 'y' must have the same row count "
                              "(shape[0]).")
 
         input_size = x.shape[1]
@@ -147,7 +143,7 @@ class LogisticRegression:
         likelihood = []
         prev_loss = 1.0
 
-        if device == "cpu":
+        if self._device == "cpu":
             nx = x
             ny = y
 
@@ -185,42 +181,6 @@ class LogisticRegression:
                 cycle += 1
 
         return likelihood
-
-    @staticmethod
-    def accuracy(y: np.ndarray | cp.ndarray,
-                 y_pred: np.ndarray | cp.ndarray,
-                 device: str = "cpu") -> float:
-        '''
-        Calculate the accuracy of the logistic regression predictions.
-        :param y: True value(s).
-        :param y_pred: Predicted value(s).
-        :param device: CPU or GPU device.
-        :return: Prediction accuracy value.
-        '''
-        yp = (y_pred >= 0.5).astype(int)
-
-        if device == "cpu":
-            ny = y
-            nyp = yp
-
-            if isinstance(ny, cp.ndarray):
-                ny = cp.asnumpy(ny)
-
-            if isinstance(nyp, cp.ndarray):
-                nyp = cp.asnumpy(nyp)
-
-            return float(np.mean(np.abs(ny - nyp)))
-        else:
-            cy = y
-            cyp = yp
-
-            if isinstance(cy, np.ndarray):
-                cy = cp.asarray(cy)
-
-            if isinstance(cyp, np.ndarray):
-                cyp = cp.asarray(cyp)
-
-            return float(cp.mean(cp.abs(cy - cyp))[0])
 
     @staticmethod
     def log_likelihood(y: np.ndarray | cp.ndarray,

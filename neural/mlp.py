@@ -368,10 +368,10 @@ class MLPOutputLayer:
         :param learning_rate: Learning rate.
         :return: This layer's error value.
         '''
-        loss = (self._loss_functions[self._loss_function]["cpu"](y, self._a, self._hyper_param) +
-                self._regularizer_functions[self._regularizer_function]["cpu"](self._weights, self._hyper_param))
+        self._loss = (self._loss_functions[self._loss_function]["cpu"](y, self._a, self._hyper_param) +
+                      self._regularizer_functions[self._regularizer_function]["cpu"](self._weights, self._hyper_param))
         self._d = self._activation_functions[self._activation_function]["cpu"][1](self._z, self._a, self._hyper_param)
-        delta = loss * self._d
+        delta = self._loss * self._d
 
         self._update, self._weights = self._optimizer_functions[self._optimizer_function]["cpu"](
             cycle, samples, self._update, learning_rate, delta, self._weights, self._a, self._d, self._hyper_param)
@@ -388,10 +388,10 @@ class MLPOutputLayer:
         :param learning_rate: Learning rate.
         :return: This layer's error value.
         '''
-        loss = (self._loss_functions[self._loss_function]["gpu"](y, self._a, self._hyper_param) +
-                self._regularizer_functions[self._regularizer_function]["gpu"](self._weights, self._hyper_param))
+        self._loss = (self._loss_functions[self._loss_function]["gpu"](y, self._a, self._hyper_param) +
+                      self._regularizer_functions[self._regularizer_function]["gpu"](self._weights, self._hyper_param))
         self._d = self._activation_functions[self._activation_function]["gpu"][1](self._z, self._a, self._hyper_param)
-        delta = loss * self._d
+        delta = self._loss * self._d
 
         self._update, self._weights = self._optimizer_functions[self._optimizer_function]["gpu"](
             cycle, samples, self._update, learning_rate, delta, self._weights, self._a, self._d, self._hyper_param)
@@ -566,7 +566,7 @@ class MultilayerPerceptronNN:
     def train(self,
               x: np.ndarray | cp.ndarray,
               y: np.ndarray | cp.ndarray,
-              epochs: int) -> list[float]:
+              epochs: int) -> list:
         '''
         Train the neural network.
         :param x: Input data.
